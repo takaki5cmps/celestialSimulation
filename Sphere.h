@@ -9,7 +9,7 @@
 
 class Sphere {
 public:
-    std::wstring name;      // 名前
+    std::string name;      // 名前
     float x, y, z;         // 球の位置
     float vx, vy, vz;      // 球の速度（x, y, z成分）
     float ax, ay, az;      // 球の加速度（x, y, z成分）
@@ -24,7 +24,7 @@ public:
 
     
     Sphere(     // コンストラクタ: 初期値を設定
-        std::wstring nameInput,
+        std::string nameInput,
         float posX, float posY, float posZ,
         float velX, float velY, float velZ, 
         float m, float rad,

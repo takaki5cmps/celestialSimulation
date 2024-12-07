@@ -40,5 +40,5 @@ namespace cameraSetting{
     const float zNear = 1.0e-5f;
     const float zFar = 10000.0f;
     const float omega= 2.0*M_PI/(365*24*60*60);               //カメラの経度方向の移動の角速度
-    const float omega_z= 2.0*M_PI/(365*24*60*60);            //カメラの緯度方向の移動の角速度
+    const float omega_z= 10*omega;            //カメラの緯度方向の移動の角速度
 }

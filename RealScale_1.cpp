@@ -5,6 +5,9 @@
 #include <cmath>
 #include <iostream>
 
+// インストールしたライブラリ
+#include <GL/freeglut.h> // OpenGLのラッパーライブラリ (https://www.transmissionzero.co.uk/computing/using-glut-with-mingw/)
+
 // 自作ヘッダー
 #include "Constants.h"  // 物理定数、スケール係数、カメラや描画に関する定数、数値積分の手法列挙
 #include "Geometry.h"   // Geometry::distanceBetweenPoints, Geometry::angleBetweenSegments   二点間の距離を求める関数と、二つのベクトルのなす角を求める関数
@@ -17,7 +20,6 @@
 
 Universe universe(IntegrationMethod::RK4);
 
-// Camera camera(&universe.spheres[1]);
 Camera camera(universe, {});
 
 //光源の設定
@@ -112,111 +114,145 @@ void drawPlane(float size, float step, float y) {
 
 
 
-void drawTextW(HDC hdc, wchar_t* text, int x, int y) {
-    SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, RGB(255, 255, 255));  // 白色
-    TextOutW(hdc, x, y, text, wcslen(text));  // 指定した位置にワイド文字のテキストを描画
+// テキストを描画
+void drawText(const char* text, float x, float y, float r=1.0f, float g=1.0f, float b=1.0f) {
+    glColor3f(r, g, b); // テキストの色を設定
+    glRasterPos2f(x, y);
+    while (*text) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *text);
+        text++;
+    }
 }
 
 
-
-
 // ウィンドウプロシージャ: ウィンドウが受け取るメッセージ（描画要求など）を処理する関数
+float windowWidth = 0.0f;
+float windowHeight = 0.0f;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    float aspect = 0.0;
+    float aspect = 0.0; //アスペクト比
+    
     switch (uMsg) {
         case WM_DESTROY:
+std::cout << "WM_DESTROY" << std::endl;
             PostQuitMessage(0); // ウィンドウが閉じられたときにプログラムを終了する
             return 0;
 
         case WM_SIZE: {     //ウィンドウサイズが変更されたとき
+std::cout << "WM_SIZE" << std::endl;
             // ウィンドウの幅と高さを取得
-            int width = LOWORD(lParam);  // ウィンドウの幅（下位16ビット）
-            int height = HIWORD(lParam); // ウィンドウの高さ（上位16ビット）
+            windowWidth = LOWORD(lParam);  // ウィンドウの幅（下位16ビット）
+            windowHeight = HIWORD(lParam); // ウィンドウの高さ（上位16ビット）
 
             // ビューポートのサイズを設定
-            glViewport(0, 0, width, height);  // 描画領域をウィンドウのサイズに合わせる
+            glViewport(0, 0, windowWidth, windowHeight);  // 描画領域をウィンドウのサイズに合わせる
 
             // 投影行列（カメラの視野の設定）
             glMatrixMode(GL_PROJECTION); // 投影行列モード
             glLoadIdentity();            // 投影行列を単位行列にリセット
-            aspect = (float)width / (float)height; // アスペクト比を計算
+            aspect = (float)windowWidth / (float)windowHeight; // アスペクト比を計算
             gluPerspective(cameraSetting::fovy, aspect, cameraSetting::zNear, cameraSetting::zFar);  // 視野角とアスペクト比を設定
 
             glMatrixMode(GL_MODELVIEW); // モデルビュー行列に戻す
             return 0;
         }
         case WM_TIMER:
+std::cout << "WM_TIMER" << std::endl;
                 universe.update(DT);
                 InvalidateRect(hwnd, NULL, FALSE); // 間接的に再描画をリクエスト : 間接的にウィンドウに「WM_PAINT」が送られるらしい。
             return 0;
 
         case WM_PAINT: {
+std::cout << "WM_PAINT" << std::endl;
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
 
-            // 描画内容をクリア（画面を黒に塗りつぶし、深度バッファをリセット）
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // 描画内容をクリア（画面を黒に塗りつぶし、深度バッファをリセット）
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // モデルビュー行列（カメラ位置やモデルの変換を設定）
-            glMatrixMode(GL_MODELVIEW); // 操作対象行列をモデルビュー行列に設定
-            glLoadIdentity();           // モデルビュー行列を単位行列にリセット
-            
-            // カメラの位置と向きの設定
-            camera.update();
-            // 上記で用意した値を渡してカメラの位置・向き(前・上)を設定
-            gluLookAt(
-                camera.getPosition(0), camera.getPosition(1), camera.getPosition(2),    // カメラの位置：全天体の重心の周りをまわっていく感じ
-                camera.getTarget(0),camera.getTarget(1),camera.getTarget(2),    // カメラが注視する点：全天体の重心に設定
-                camera.getUp(0),camera.getUp(1), camera.getUp(2)  // カメラの上方向
-            );
-
-            // 光源の設定
-            glEnable(GL_LIGHTING);      // ライティングを有効化
-            setLighting(GL_LIGHT0);     // 光源0の設定
-            glEnable(GL_LIGHT0);        // 光源0を有効化
-
-            //gridを描画
-            drawGrid(30.0f, 3.0f, -10.0f);
-            // drawGrid(10000.0f, 100, -1000);
-            // drawRadialLines(500,10000,-10);
-
-            // 全ての球を描画
-            for (Sphere& sphere : universe.spheres) {
-                sphere.draw();
-                sphere.drawTrajectory();
-            }
-            SwapBuffers(hdc); // 描画内容を画面に反映
-            
-            // 位置や速度の情報をテキストとして描画
-            int linePosition=0;
-            wchar_t text[256];
-            swprintf(text, sizeof(text)/sizeof(wchar_t), 
-                L"Scale of distance (/km) : %.2E,  Scale of time (/s) : %.2E",
-                scaling::distance,scaling::time
-            );
-            drawTextW(hdc, text, 10, 10 + static_cast<int>(linePosition));  // 位置や速度を画面に表示
-            linePosition+=20;
-            for (size_t i = 0; i < universe.spheres.size(); ++i) {
-                swprintf(text, sizeof(text)/sizeof(wchar_t), 
-                    L"%ls (Sphere%zu) : ",
-                    universe.spheres[i].name.c_str(),
-                    i + 1
+                // モデルビュー行列（カメラ位置やモデルの変換を設定）
+                glMatrixMode(GL_MODELVIEW); // 操作対象行列をモデルビュー行列に設定
+                glLoadIdentity();           // モデルビュー行列を単位行列にリセット
+                
+                // カメラの位置と向きの設定
+                camera.update();
+                // 上記で用意した値を渡してカメラの位置・向き(前・上)を設定
+                gluLookAt(
+                    camera.getPosition(0), camera.getPosition(1), camera.getPosition(2),    // カメラの位置：全天体の重心の周りをまわっていく感じ
+                    camera.getTarget(0),camera.getTarget(1),camera.getTarget(2),    // カメラが注視する点：全天体の重心に設定
+                    camera.getUp(0),camera.getUp(1), camera.getUp(2)  // カメラの上方向
                 );
-                drawTextW(hdc, text, 10, 10 + static_cast<int>(linePosition));  // 位置や速度を画面に表示
-                linePosition+=20;
 
-                swprintf(text, sizeof(text)/sizeof(wchar_t), 
-                    L"Position(%.2E, %.2E, %.2E)[km], Velosity(%.2E, %.2E, %.2E)[km/s], Mass:%.2E[kg], Radius:%.2E[km], RGB(%.0f, %.0f, %.0f)", 
-                    universe.spheres[i].x/scaling::distance, universe.spheres[i].y/scaling::distance, universe.spheres[i].z/scaling::distance, 
-                    universe.spheres[i].vx/scaling::velocity, universe.spheres[i].vy/scaling::velocity, universe.spheres[i].vz/scaling::velocity, 
-                    universe.spheres[i].mass,
-                    universe.spheres[i].radius/scaling::distance,
-                    universe.spheres[i].color[0]/scaling::color, universe.spheres[i].color[1]/scaling::color,universe.spheres[i].color[2]/scaling::color
-                );
-                drawTextW(hdc, text, 10, 10 + static_cast<int>(linePosition));  // 位置や速度を画面に表示
-                linePosition+=20;
-            }
+                // 光源の設定
+                glEnable(GL_LIGHTING);      // ライティングを有効化
+                setLighting(GL_LIGHT0);     // 光源0の設定
+                glEnable(GL_LIGHT0);        // 光源0を有効化
+
+                //gridを描画
+                drawGrid(150.0f, 3.0f, -10.0f);
+                // drawGrid(10000.0f, 100, -1000);
+                // drawRadialLines(500,10000,-10);
+
+                // 全ての球を描画
+                for (Sphere& sphere : universe.spheres) {
+                    sphere.draw();
+                    sphere.drawTrajectory();
+                }
+                // SwapBuffers(hdc); // 描画内容を画面に反映
+
+                
+                
+                
+                // テキストを描画
+                glDisable(GL_LIGHTING); // テキスト描画のためにライティングを無効化
+                
+                glMatrixMode(GL_PROJECTION); // 投影行列モードに切り替え
+                glPushMatrix(); // 現在の投影行列を保存
+                glLoadIdentity(); // 単位行列をロードして投影行列を初期化
+                gluOrtho2D(0, windowWidth, 0, windowHeight); // 2D直交投影行列を設定（ウィンドウサイズに合わせて設定）
+
+                glMatrixMode(GL_MODELVIEW); // モデルビュー行列モードに切り替え
+                glPushMatrix(); // 現在のモデルビュー行列を保存
+                glLoadIdentity(); // 単位行列をロードしてモデルビュー行列を初期化
+
+                    // 位置や速度の情報をテキストとして描画
+                    const float xBuffer = 10.0;
+                    const float yBuffer = -20.0;
+                    const float lineHeight = 20.0;
+                    float linePosition = 0.0;
+                    char text[256];
+                    snprintf(text, sizeof(text), 
+                        "Scale of distance (/km) : %.2E,  Scale of time (/s) : %.2E",
+                        scaling::distance, scaling::time
+                    );
+                    drawText(text, xBuffer, yBuffer + windowHeight-static_cast<int>(linePosition));  // 距離や時間のスケールを画面に表示
+                    linePosition += lineHeight;
+                    for (size_t i = 0; i < universe.spheres.size(); ++i) {
+                        snprintf(text, sizeof(text), 
+                            "%s (Sphere%zu) : ",
+                            universe.spheres[i].name.c_str(),
+                            i + 1
+                        );
+                        drawText(text, xBuffer, yBuffer + windowHeight-static_cast<int>(linePosition), universe.spheres[i].color[0], universe.spheres[i].color[1], universe.spheres[i].color[2]);  // 天体の名前を画面に表示
+                        linePosition += lineHeight;
+
+                        snprintf(text, sizeof(text), 
+                            "Position(%.2E, %.2E, %.2E)[km], Velocity(%.2E, %.2E, %.2E)[km/s], Mass:%.2E[kg], Radius:%.2E[km]", 
+                            universe.spheres[i].x / scaling::distance, universe.spheres[i].y / scaling::distance, universe.spheres[i].z / scaling::distance, 
+                            universe.spheres[i].vx / scaling::velocity, universe.spheres[i].vy / scaling::velocity, universe.spheres[i].vz / scaling::velocity, 
+                            universe.spheres[i].mass,
+                            universe.spheres[i].radius / scaling::distance
+                            // universe.spheres[i].color[0], universe.spheres[i].color[1], universe.spheres[i].color[2]
+                        );
+                        drawText(text, xBuffer, yBuffer + windowHeight-static_cast<int>(linePosition));  // 位置・速度・色を画面に表示
+                        linePosition += lineHeight;
+                    }
+                
+                glMatrixMode(GL_PROJECTION);
+                glPopMatrix();
+                glMatrixMode(GL_MODELVIEW);
+                glPopMatrix();
+                glEnable(GL_LIGHTING); // ライティングを再度有効化
+                SwapBuffers(hdc); // 描画内容を画面に反映
 
             EndPaint(hwnd, &ps);
             return 0;
@@ -229,8 +265,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 // WinMain関数: プログラムのエントリーポイント
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    char CLASS_NAME[] = "OpenGLWindow";
+    const char* argv[] = { "dummy", NULL };
+    int argc = 1;
+    glutInit(&argc, (char**)argv); // FreeGLUTの初期化
 
+    char CLASS_NAME[] = "OpenGLWindow";
     // ウィンドウクラスを登録
     WNDCLASS wc = {};
     wc.lpfnWndProc = WindowProc; // ウィンドウプロシージャを指定
@@ -276,7 +315,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 // Sphereクラスのインスタンス化、天体の初期条件入力-------------------------------------------------------------------------
     float radiusScaler= 1.0;  // 実際の比にすると星が小さすぎて見えないので、便宜的に半径のみ実際より大きくしたい場合がある。
     universe.addSphere(Sphere(
-        L"Sun", //名前(ワイド文字)
+        "Sun", //名前(ワイド文字)
         0.0f, 0.0f, 0.0f,   //位置(km)
         0.0f, 0.0f, 0.0f,   //速度(km/s)
         celestialConstants::solar_mass, // 質量(kg)
@@ -284,7 +323,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         255.0f, 100.0f, 0.0f    //rgb(0-255)
     ));  // 赤い球
     universe.addSphere(Sphere(
-        L"Earth",   //名前(ワイド文字)
+        "Earth",   //名前(ワイド文字)
         celestialConstants::distance_sun_earth, 0.0f, 0.0f,   //位置(km)
         0.0f, celestialConstants::earth_orbital_speed, 0.0f,  //速度(km/s)
         celestialConstants::earth_mass,               //質量(kg)
@@ -292,7 +331,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         69.0f, 130.0f, 181.0f    //rgb(0-255)
     ));
     universe.addSphere(Sphere(
-        L"Moon",   //名前(ワイド文字)
+        "Moon",   //名前(ワイド文字)
         celestialConstants::distance_sun_earth+celestialConstants::distance_earth_moon, 0.0f, 0.0f,   //位置(km)
         0.0f, celestialConstants::earth_orbital_speed+celestialConstants::moon_orbital_speed, 0.0f,  //速度(km/s)
         celestialConstants::moon_mass,               //質量(kg)

@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "*.cpp",
+                "-o",
+                "RealScale_1.exe",
+                "-lfreeglut",   // インストールしたFreeGLUTライブラリ
+                "-lopengl32",
+                "-lgdi32",
+                "-lglu32"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "コンパイルタスク",
+            "showOutput": "always"
+        },
+        {
+            "label": "run",
+            "dependsOn": "build",
+            "type": "process",
+            "command": "./RealScale_1.exe",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "showOutput": "always"
+        }
+    ]
+}

@@ -13,7 +13,7 @@
 
 // コンストラクタ: 初期値を設定
 Sphere::Sphere(
-        std::wstring nameInput,
+        std::string nameInput,
         float posX, float posY, float posZ,
         float velX, float velY, float velZ, 
         float m, float rad,

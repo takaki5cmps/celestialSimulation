@@ -55,11 +55,16 @@ void Camera::update(){
 // カメラのTargetをアップデート。TargetはtargetSpheresの重心とする。
     float massPos[3] = {0.0f, 0.0f, 0.0f};
     float totalMass = 0.0f;
+    // 重心を計算してtarget_に格納
     for (Sphere* sphere : targetSpheres_){
-        massPos[0]+=sphere->mass*sphere->x;
-        massPos[1]+=sphere->mass*sphere->y;
-        massPos[2]+=sphere->mass*sphere->z;
-        totalMass+=sphere->mass;
+        // massPos[0]+=sphere->mass*sphere->x;
+        // massPos[1]+=sphere->mass*sphere->y;
+        // massPos[2]+=sphere->mass*sphere->z;
+        // totalMass+=sphere->mass;
+        massPos[0]+=1.0*sphere->x;
+        massPos[1]+=1.0*sphere->y;
+        massPos[2]+=1.0*sphere->z;
+        totalMass+=1.0;
     }
     target_[0]=massPos[0]/totalMass;
     target_[1]=massPos[1]/totalMass;
