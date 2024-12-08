@@ -3,7 +3,7 @@
 
 // グローバル定数
 const float DT = 10000; // 数値積分および描画の時間ステップ。
-const float INITIAL_WAITING_PERIOD = 0.2*250; //exe実行からアニメーション開始まで時間[DT]
+const float INITIAL_WAITING_PERIOD = 1.0*250; //exe実行からアニメーション開始まで時間[DT]
 const size_t TRAJECTORYLENGTH = 500;    // 軌跡の長さ(残存時間)[DT]
 
 // 物理定数

@@ -128,6 +128,7 @@ void drawText(const char* text, float x, float y, float r=1.0f, float g=1.0f, fl
 // ウィンドウプロシージャ: ウィンドウが受け取るメッセージ（描画要求など）を処理する関数
 float windowWidth = 0.0f;
 float windowHeight = 0.0f;
+float counter = 0.0f;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     float aspect = 0.0; //アスペクト比
     
@@ -156,9 +157,13 @@ std::cout << "WM_SIZE" << std::endl;
             return 0;
         }
         case WM_TIMER:
-std::cout << "WM_TIMER" << std::endl;
+            counter++;
+// std::cout << "WM_TIMER" << std::endl;
+            if (counter >= 0.0f) {
                 universe.update(DT);
                 InvalidateRect(hwnd, NULL, FALSE); // 間接的に再描画をリクエスト : 間接的にウィンドウに「WM_PAINT」が送られるらしい。
+                counter = 0.0f;
+            }
             return 0;
 
         case WM_PAINT: {
@@ -166,15 +171,17 @@ std::cout << "WM_PAINT" << std::endl;
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
 
+
+                // カメラの位置と向きの設定
+                camera.update(); // カメラの位置・向きを更新
+
                 // 描画内容をクリア（画面を黒に塗りつぶし、深度バッファをリセット）
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 // モデルビュー行列（カメラ位置やモデルの変換を設定）
                 glMatrixMode(GL_MODELVIEW); // 操作対象行列をモデルビュー行列に設定
                 glLoadIdentity();           // モデルビュー行列を単位行列にリセット
-                
-                // カメラの位置と向きの設定
-                camera.update();
+
                 // 上記で用意した値を渡してカメラの位置・向き(前・上)を設定
                 gluLookAt(
                     camera.getPosition(0), camera.getPosition(1), camera.getPosition(2),    // カメラの位置：全天体の重心の周りをまわっていく感じ

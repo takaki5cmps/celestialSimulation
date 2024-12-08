@@ -14,8 +14,6 @@ public:
     float getTarget(int i) const;
     float getUp(int i) const;
     void update();
-    
-
 private:
     // float fovy_, aspect_, zNear_, zFar;     // 一応作っておいた。
     float position_[3];  // カメラの位置（x, y, z）
