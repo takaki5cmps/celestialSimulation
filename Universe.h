@@ -4,6 +4,8 @@
 // #include "Constants.h"
 #include "Sphere.h"
 
+
+
 // Universeクラス：すべてのSphereオブジェクトを管理し、相互作用を計算、Sphereオブジェクトの状態も更新
 class Universe {
 public:

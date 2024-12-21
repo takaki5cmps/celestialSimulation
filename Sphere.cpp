@@ -7,7 +7,7 @@
 
 #include "Constants.h"
 #include "Geometry.h"
-
+#include "Universe.h"
 #include "Sphere.h"
 
 
@@ -31,13 +31,6 @@ Sphere::Sphere(
 {
     // 球体の色
     color[0] = r*scaling::color; color[1] = g*scaling::color; color[2] = b*scaling::color;
-
-    // 球体の初期条件を表示
-    // std::cout << "initial position:" << x << ", " << y << ", " << z << std::endl;
-    // std::cout << "initial velosity:" << vx << ", " << vy << ", " << vz << std::endl;
-    // std::cout << "mass:" << mass << std::endl;
-    // std::cout << "radius:" << radius << std::endl;
-    // std::cout << "RGB:" << color[0] << ", " << color[1] << ", " << color[2] << std::endl;
 }
 
 // 自転角度を更新

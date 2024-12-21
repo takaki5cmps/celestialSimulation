@@ -1,3 +1,4 @@
+// windowsとGCC標準装備のライブラリ
 #include <windows.h> // Windows APIを使用するためのヘッダー
 #include <GL/gl.h>   // OpenGLの基本機能を使うためのヘッダー
 #include <GL/glu.h>  // OpenGLのユーティリティ関数（例: gluSphere）を使うためのヘッダー
@@ -15,12 +16,10 @@
 #include "Universe.h" // SphereをまとめたクラスSpheresをメンバとして持つ。相互作用を計算し、各Sphereの位置や速度を決める。
 #include "Camera.h" // 名前の通り。カメラの動きを決める。
 
-// グローバル変数
-// float globalTime = 0.0f;
-
 Universe universe(IntegrationMethod::RK4);
-
 Camera camera(universe, {});
+
+
 
 //光源の設定
 void setLighting(GLenum lightSource) {
@@ -119,7 +118,7 @@ void drawText(const char* text, float x, float y, float r=1.0f, float g=1.0f, fl
     glColor3f(r, g, b); // テキストの色を設定
     glRasterPos2f(x, y);
     while (*text) {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *text);
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *text);
         text++;
     }
 }
@@ -145,7 +144,7 @@ std::cout << "WM_SIZE" << std::endl;
             windowHeight = HIWORD(lParam); // ウィンドウの高さ（上位16ビット）
 
             // ビューポートのサイズを設定
-            glViewport(0, 0, windowWidth, windowHeight);  // 描画領域をウィンドウのサイズに合わせる
+            glViewport(50, 0, windowWidth-100, windowHeight-0);  // 描画領域をウィンドウのサイズに合わせる
 
             // 投影行列（カメラの視野の設定）
             glMatrixMode(GL_PROJECTION); // 投影行列モード
@@ -156,24 +155,25 @@ std::cout << "WM_SIZE" << std::endl;
             glMatrixMode(GL_MODELVIEW); // モデルビュー行列に戻す
             return 0;
         }
-        case WM_TIMER:
+        case WM_TIMER:      // メインループが16msごとにWM_TIMERを送っている
+std::cout << "WM_TIMER" << std::endl;
             counter++;
-// std::cout << "WM_TIMER" << std::endl;
+
             if (counter >= 0.0f) {
                 universe.update(DT);
                 InvalidateRect(hwnd, NULL, FALSE); // 間接的に再描画をリクエスト : 間接的にウィンドウに「WM_PAINT」が送られるらしい。
                 counter = 0.0f;
             }
+
+            // カメラの位置と向きの設定
+            camera.update(); // カメラの位置・向きを更新
+
             return 0;
 
         case WM_PAINT: {
 std::cout << "WM_PAINT" << std::endl;
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-
-
-                // カメラの位置と向きの設定
-                camera.update(); // カメラの位置・向きを更新
 
                 // 描画内容をクリア（画面を黒に塗りつぶし、深度バッファをリセット）
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

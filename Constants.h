@@ -36,14 +36,7 @@ namespace scaling{
     extern const float color;  // ユーザーは0~255のRGBを入力するが、openGLは0~1で扱うため
 }
 
-// カメラや描画に関する定数
-namespace cameraSetting{
-    extern const float fovy;
-    extern const float zNear;
-    extern const float zFar;
-    extern const float omega;               //カメラの経度方向の移動の角速度
-    extern const float omega_z;            //カメラの緯度方向の移動の角速度
-}
+
 
 extern const float INITIAL_WAITING_PERIOD; //exe実行からアニメーション開始まで時間[DT]
 extern const size_t TRAJECTORYLENGTH;    // 軌跡の長さ(残存時間)[DT]

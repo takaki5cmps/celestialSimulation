@@ -4,6 +4,15 @@
 #include "Universe.h"
 #include "Sphere.h"
 
+// カメラや描画に関する定数
+namespace cameraSetting{
+    extern const float fovy;
+    extern const float zNear;
+    extern const float zFar;
+    extern const float omega;               //カメラの経度方向の移動の角速度
+    extern const float omega_z;            //カメラの緯度方向の移動の角速度
+}
+
 class Camera{
 public:
 

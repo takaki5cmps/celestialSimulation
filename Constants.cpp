@@ -3,8 +3,8 @@
 
 // グローバル定数
 const float DT = 10000; // 数値積分および描画の時間ステップ。
-const float INITIAL_WAITING_PERIOD = 1.0*250; //exe実行からアニメーション開始まで時間[DT]
-const size_t TRAJECTORYLENGTH = 500;    // 軌跡の長さ(残存時間)[DT]
+const float INITIAL_WAITING_PERIOD = 0.2*500; //exe実行からアニメーション開始まで時間[DT]
+const size_t TRAJECTORYLENGTH = 50;    // 軌跡の長さ(残存時間)[DT]
 
 // 物理定数
 namespace celestialConstants {
@@ -34,11 +34,3 @@ namespace scaling{
     const float color = 1/255.0f;  // ユーザーは0~255のRGBを入力するが、openGLは0~1で扱うため
 }
 
-// カメラや描画に関する定数
-namespace cameraSetting{
-    const float fovy = 60.0f;
-    const float zNear = 1.0e-5f;
-    const float zFar = 10000.0f;
-    const float omega= 2.0*M_PI/(365*24*60*60);               //カメラの経度方向の移動の角速度
-    const float omega_z= 10*omega;            //カメラの緯度方向の移動の角速度
-}
