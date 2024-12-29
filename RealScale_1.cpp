@@ -16,7 +16,28 @@
 #include "Universe.h" // SphereをまとめたクラスSpheresをメンバとして持つ。相互作用を計算し、各Sphereの位置や速度を決める。
 #include "Camera.h" // 名前の通り。カメラの動きを決める。
 
-Universe universe(IntegrationMethod::RK4);
+std::chrono::system_clock::time_point maketimepiont(int year, int month, int day, int hour, int minute, int second)
+{
+    std::tm t;
+    t.tm_year = year-1900;
+    t.tm_mon = month-1;
+    t.tm_mday = day;
+    t.tm_hour = hour;
+    t.tm_min = minute;
+    t.tm_sec = second;
+    t.tm_isdst = 0;
+    std::time_t tt = std::mktime(&t);
+    return std::chrono::system_clock::from_time_t(tt);
+}
+
+std::tm* maketm_from_timepoint(std::chrono::system_clock::time_point tp)
+{
+    std::time_t tp_time_t = std::chrono::system_clock::to_time_t(tp);
+    std::tm *tp_tm = std::localtime(&tp_time_t);
+    return tp_tm;
+}
+
+Universe universe(IntegrationMethod::RK4, maketimepiont(2024, 12, 22, 0, 0, 0)); // 宇宙の生成
 Camera camera(universe, {});
 
 
@@ -36,7 +57,7 @@ void setLighting(GLenum lightSource) {
     glLightfv(lightSource, GL_SPECULAR, specularLight);
 
     // 光源の位置設定
-    GLfloat lightPos[] = {0.0f, 0.0f, 10.0f, 1.0f}; // 光源位置 (点光源)
+    GLfloat lightPos[] = {0.0f, 0.0f, 0.0f, 1.0f}; // 光源位置 (点光源)
     glLightfv(lightSource, GL_POSITION, lightPos);
 }
 
@@ -118,7 +139,7 @@ void drawText(const char* text, float x, float y, float r=1.0f, float g=1.0f, fl
     glColor3f(r, g, b); // テキストの色を設定
     glRasterPos2f(x, y);
     while (*text) {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *text);
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *text);
         text++;
     }
 }
@@ -160,7 +181,7 @@ std::cout << "WM_TIMER" << std::endl;
             counter++;
 
             if (counter >= 0.0f) {
-                universe.update(DT);
+                universe.update(scaling::DT);
                 InvalidateRect(hwnd, NULL, FALSE); // 間接的に再描画をリクエスト : 間接的にウィンドウに「WM_PAINT」が送られるらしい。
                 counter = 0.0f;
             }
@@ -195,7 +216,7 @@ std::cout << "WM_PAINT" << std::endl;
                 glEnable(GL_LIGHT0);        // 光源0を有効化
 
                 //gridを描画
-                drawGrid(150.0f, 3.0f, -10.0f);
+                drawGrid(210.0f, 3.0f, -10.0f);
                 // drawGrid(10000.0f, 100, -1000);
                 // drawRadialLines(500,10000,-10);
 
@@ -221,6 +242,11 @@ std::cout << "WM_PAINT" << std::endl;
                 glPushMatrix(); // 現在のモデルビュー行列を保存
                 glLoadIdentity(); // 単位行列をロードしてモデルビュー行列を初期化
 
+                    // シミュレーション時間をフォーマットしたものをstring型のテキストとして作成
+                    std::chrono::system_clock::time_point tp = universe.getSimulationTime_tp();
+                    std::tm *tm = maketm_from_timepoint(tp);
+                    std::string currentTime = std::to_string(tm->tm_year+1900) + "/" + std::to_string(tm->tm_mon+1) + "/" + std::to_string(tm->tm_mday) + " " + std::to_string(tm->tm_hour) + ":" + std::to_string(tm->tm_min) + ":" + std::to_string(tm->tm_sec);
+                    
                     // 位置や速度の情報をテキストとして描画
                     const float xBuffer = 10.0;
                     const float yBuffer = -20.0;
@@ -228,8 +254,8 @@ std::cout << "WM_PAINT" << std::endl;
                     float linePosition = 0.0;
                     char text[256];
                     snprintf(text, sizeof(text), 
-                        "Scale of distance (/km) : %.2E,  Scale of time (/s) : %.2E",
-                        scaling::distance, scaling::time
+                        "Scale of distance (/km) : %.2E,  Scale of time (s/s) : %.2E,  Time lapse (s) : %.2E, Current time : %s",
+                        scaling::distance, scaling::time_simu2real, universe.getSimulationTime(), currentTime.c_str()
                     );
                     drawText(text, xBuffer, yBuffer + windowHeight-static_cast<int>(linePosition));  // 距離や時間のスケールを画面に表示
                     linePosition += lineHeight;
@@ -290,7 +316,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // ウィンドウを作成
     HWND hwnd = CreateWindowEx(0, CLASS_NAME, "3D Sphere Simulation",
-                               WS_OVERLAPPEDWINDOW, 0, 0, 1100, 1030,        // ウィンドウ位置座標のデフォルト値:CW_USEDEFAULT
+                               WS_OVERLAPPEDWINDOW, 0, 0,         // ウィンドウ位置座標のデフォルト値:CW_USEDEFAULT
+                               1200, 1030,         // ウィンドウの幅と高さ
                                NULL, NULL, hInstance, NULL);
     
 
@@ -320,14 +347,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 // Sphereクラスのインスタンス化、天体の初期条件入力-------------------------------------------------------------------------
-    float radiusScaler= 1.0;  // 実際の比にすると星が小さすぎて見えないので、便宜的に半径のみ実際より大きくしたい場合がある。
+    const float radiusScaler= 1.0;  // 実際の比にすると星が小さすぎて見えないので、便宜的に半径のみ実際より大きくしたい場合がある。
     universe.addSphere(Sphere(
         "Sun", //名前(ワイド文字)
         0.0f, 0.0f, 0.0f,   //位置(km)
         0.0f, 0.0f, 0.0f,   //速度(km/s)
         celestialConstants::solar_mass, // 質量(kg)
         celestialConstants::solar_radius*radiusScaler,               //半径(km)
-        255.0f, 100.0f, 0.0f    //rgb(0-255)
+        255.0f, 100.0f, 0.0f,    //rgb(0-255)
+        true    // 光源として扱う
     ));  // 赤い球
     universe.addSphere(Sphere(
         "Earth",   //名前(ワイド文字)
@@ -335,7 +363,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         0.0f, celestialConstants::earth_orbital_speed, 0.0f,  //速度(km/s)
         celestialConstants::earth_mass,               //質量(kg)
         celestialConstants::earth_radius*radiusScaler,               //半径(km)
-        69.0f, 130.0f, 181.0f    //rgb(0-255)
+        69.0f, 130.0f, 181.0f,    //rgb(0-255)
+        false
     ));
     universe.addSphere(Sphere(
         "Moon",   //名前(ワイド文字)
@@ -343,7 +372,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         0.0f, celestialConstants::earth_orbital_speed+celestialConstants::moon_orbital_speed, 0.0f,  //速度(km/s)
         celestialConstants::moon_mass,               //質量(kg)
         celestialConstants::moon_radius*radiusScaler,               //半径(km)
-        190.0f, 190.0f, 190.0f    //rgb(0-255)
+        190.0f, 190.0f, 190.0f,    //rgb(0-255)
+        false
     ));
     // camera.addSphere(&universe.spheres[0]);
     camera.addSphere(&universe.spheres[1]);

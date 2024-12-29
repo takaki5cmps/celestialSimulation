@@ -6,7 +6,8 @@
 #include <cmath> // M_PI
 
 // グローバル定数
-extern const float DT; // 1シミュレーション単位。数値積分および描画の時間ステップ。
+extern const float INITIAL_WAITING_PERIOD; //exe実行からアニメーション開始まで時間[DT]
+extern const size_t TRAJECTORYLENGTH;    // 軌跡の長さ(残存時間)[DT]
 
 // 物理定数
 namespace celestialConstants {
@@ -25,6 +26,9 @@ namespace celestialConstants {
 
 // スケール係数
 namespace scaling{
+   // 時間関係
+    extern const float time_simu2real; // 現実時間1sで経過するシミュレーション時間[s]
+    extern const float DT; // 数値積分の時間ステップ。単位はシミュレーション内のsecond
     // 物理量関係
     extern const float distance; // 長さをkmからシミュレーション単位へ変換。10を1e+8kmくらいとする。(参考：地球から太陽までの距離は1.496e+8km)
     extern const float time_toDT;      // 時間をsecondからシミュレーション単位へ変換。1000[DT]で地球1周にしたい->1000[DT]=365日*24時間*60分*60second
@@ -38,8 +42,7 @@ namespace scaling{
 
 
 
-extern const float INITIAL_WAITING_PERIOD; //exe実行からアニメーション開始まで時間[DT]
-extern const size_t TRAJECTORYLENGTH;    // 軌跡の長さ(残存時間)[DT]
+
 
 // 数値積分の手法列挙
 enum class IntegrationMethod {

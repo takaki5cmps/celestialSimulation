@@ -1,5 +1,6 @@
 // #include <cmath>
 // #include <vector>
+#include <chrono>
 
 #include "Universe.h"
 #include "Sphere.h"
@@ -8,9 +9,10 @@
 
 
 // コンストラクタで積分手法を指定できるようにする
-Universe::Universe(IntegrationMethod method = IntegrationMethod::RK4)
+Universe::Universe(IntegrationMethod method, std::chrono::system_clock::time_point startTime)
 :   integrationMethod(method),  // 数値積分の方法
-    simulationTime_(-1*DT*INITIAL_WAITING_PERIOD)   // simulationTimeの初期値:0を上回らないと開始しないので、マイナスの値を入れることで開始までのカウントダウンをしている。
+    simulationTime_(-1*scaling::DT*INITIAL_WAITING_PERIOD),   // simulationTimeの初期値:0を上回らないと開始しないので、マイナスの値を入れることで開始までのカウントダウンをしている。
+    startTime_(startTime)  // シミュレーション開始時刻
 {    
     centerOfMass[0] = 0.0f;
     centerOfMass[1] = 0.0f;
@@ -197,4 +199,8 @@ void Universe::update(float dt) {
 
 float Universe::getSimulationTime(){
     return simulationTime_;
+}
+
+std::chrono::system_clock::time_point Universe::getSimulationTime_tp(){
+    return startTime_+std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::duration<float>(simulationTime_));
 }

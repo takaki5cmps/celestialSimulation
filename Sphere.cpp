@@ -17,7 +17,8 @@ Sphere::Sphere(
         float posX, float posY, float posZ,
         float velX, float velY, float velZ, 
         float m, float rad,
-        float r, float g, float b
+        float r, float g, float b,
+        bool lightEmission
 )
 :   name(nameInput), // 名前
     x(posX*scaling::distance), y(posY*scaling::distance), z(posZ*scaling::distance), // 位置
@@ -27,7 +28,8 @@ Sphere::Sphere(
     ax(0.0f), ay(0.0f), az(0.0f), // 加速度
     angle_theta(0.0f),  // 球の回転角度（z軸回りの角度）
     angle_phi(0.0f),    // 球の回転軸のz軸に対する角度（-90度から90度）
-    trajectoryLength(TRAJECTORYLENGTH)
+    trajectoryLength(TRAJECTORYLENGTH),
+    lightEmission_(lightEmission) // 球が光を放つかどうか
 {
     // 球体の色
     color[0] = r*scaling::color; color[1] = g*scaling::color; color[2] = b*scaling::color;
@@ -45,14 +47,27 @@ void Sphere::draw() {
     glTranslatef(x, y, z);              // 球の位置に移動
     glRotatef(angle_theta, 0.0f, 0.0f, 1.0f); // Y軸を中心にangle_theta度回転
 
-    // 球の材質の色を設定（AmbientとDiffuseを設定）
-    GLfloat matColor[] = {color[0], color[1], color[2], 1.0f}; // RGB + α（アルファ値）
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColor);
+    
+    // マテリアルプロパティの設定
+    if (lightEmission_) {
+        GLfloat emission[] = {color[0], color[1], color[2], 1.0f}; // 球体が放つ光の色 (黄色)
+        glMaterialfv(GL_FRONT, GL_EMISSION, emission);
+    }else{
+        // 球の材質の色を設定（AmbientとDiffuseを設定）
+        GLfloat matColor[] = {color[0], color[1], color[2], 1.0f}; // RGB + α（アルファ値）
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matColor);
+    }
 
     GLUquadric* quadric = gluNewQuadric();   // 球を生成するためのオブジェクト
 
     gluSphere(quadric, radius, 10, 10);        // 半径radius、分割数10x10の球を描画
     gluDeleteQuadric(quadric);              // 使用後に解放
+
+    // マテリアルプロパティをリセット
+    if (lightEmission_) {
+        GLfloat noEmission[] = {0.0f, 0.0f, 0.0f, 1.0f};
+        glMaterialfv(GL_FRONT, GL_EMISSION, noEmission);
+    }
 
     glPopMatrix();                          // 座標系を元に戻す
 }

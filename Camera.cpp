@@ -11,8 +11,8 @@ namespace cameraSetting{
     const float fovy = 60.0f;
     const float zNear = 1.0e-5f;
     const float zFar = 10000.0f;
-    const float omega= 2.0*M_PI/(365*24*60*60);               //カメラの経度方向の移動の角速度
-    const float omega_z= 10*omega;            //カメラの緯度方向の移動の角速度
+    const float omega= 10*2.0*M_PI/(365*24*60*60);               //カメラの経度方向の移動の角速度
+    const float omega_z= 0.5*omega;            //カメラの緯度方向の移動の角速度
 }
 
 // クラスCameraの実装部分
@@ -57,14 +57,14 @@ void Camera::update(){
     float totalMass = 0.0f;
     // 見る対象を計算してtarget_に格納
     for (Sphere* sphere : targetSpheres_){
-        // massPos[0]+=sphere->mass*sphere->x;
-        // massPos[1]+=sphere->mass*sphere->y;
-        // massPos[2]+=sphere->mass*sphere->z;
-        // totalMass+=sphere->mass;
-        massPos[0]+=1.0*sphere->x;
-        massPos[1]+=1.0*sphere->y;
-        massPos[2]+=1.0*sphere->z;
-        totalMass+=1.0;
+        massPos[0]+=sphere->mass*sphere->x;
+        massPos[1]+=sphere->mass*sphere->y;
+        massPos[2]+=sphere->mass*sphere->z;
+        totalMass+=sphere->mass;
+        // massPos[0]+=1.0*sphere->x;
+        // massPos[1]+=1.0*sphere->y;
+        // massPos[2]+=1.0*sphere->z;
+        // totalMass+=1.0;
     }
     target_[0]=massPos[0]/totalMass;
     target_[1]=massPos[1]/totalMass;
@@ -132,8 +132,8 @@ void Camera::update(){
     float distance_g2camera = buffer+maxDistance + Geometry::distanceBetweenPoints(target_, position_); //これがカメラの位置ベクトルの長さ
 
     // 見る対象からカメラへの方向ベクトルを作成
-    const float z_min=0.2f; //z座標の最小値
-    const float z_max=0.7f; //z座標の最大値
+    const float z_min=-0.2f; //z座標の最小値
+    const float z_max=0.4f; //z座標の最大値
     const float theta_min=asin(z_min); //z_minにおけるthetaの値
     const float theta_max=asin(z_max); //z_maxにおけるthetaの値
     const float theta_amplitude=(theta_max-theta_min)/2; //thetaの振幅

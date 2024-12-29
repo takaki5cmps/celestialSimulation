@@ -2,9 +2,8 @@
 #include "Constants.h"
 
 // グローバル定数
-const float DT = 10000; // 数値積分および描画の時間ステップ。
-const float INITIAL_WAITING_PERIOD = 0.2*500; //exe実行からアニメーション開始まで時間[DT]
-const size_t TRAJECTORYLENGTH = 50;    // 軌跡の長さ(残存時間)[DT]
+const float INITIAL_WAITING_PERIOD = 1.0*500; //exe実行からアニメーション開始まで時間[DT]
+const size_t TRAJECTORYLENGTH = 25;    // 軌跡の長さ(残存時間)[DT]
 
 // 物理定数
 namespace celestialConstants {
@@ -23,10 +22,14 @@ namespace celestialConstants {
 
 // スケール係数
 namespace scaling{
+    // 時間関係
+    const float time_simu2real = 19710.0f; // 現実時間1sで経過するシミュレーション時間[s]
+    const float DT = time_simu2real * 0.016f; // 数値積分の時間ステップ。単位はシミュレーション内のsecond
     // 物理量関係
     const float distance = 100/1.0e8; // 長さをkmからシミュレーション単位へ変換。10を1e+8kmくらいとする。(参考：地球から太陽までの距離は1.496e+8km)
-    const float time_toDT = 100*1000.0f/(365.0f*24.0f*60.0f*60.0f);      // 時間をsecondからシミュレーション単位へ変換。1000[DT]で地球1周にしたい->1000[DT]=365日*24時間*60分*60second
-    const float time = time_toDT * ::DT;            // 時間をDTから描画単位へ変換。
+    // const float time_toDT = 100*1000.0f/(365.0f*24.0f*60.0f*60.0f);      // 時間をsecondからシミュレーション単位へ変換。1000[DT]で地球1周にしたい->1000[DT]=365日*24時間*60分*60second
+    // const float time = time_toDT * ::DT;            // 時間をDTから描画単位へ変換。
+    const float time = 1.0f;
     const float G = 1e-9 * (distance * distance * distance) / (time * time);   // 万有引力定数を変換
     const float velocity = distance / time; // 速度を変換
     const float acceleration = distance / (time * time);    // 加速度。これは必要ない可能性が高い。ユーザーが入力するものではないので。

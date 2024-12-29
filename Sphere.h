@@ -28,11 +28,14 @@ public:
         float posX, float posY, float posZ,
         float velX, float velY, float velZ, 
         float m, float rad,
-        float r, float g, float b
+        float r, float g, float b,
+        bool lightEmission
     );
     void updateRotation(float delta);   // 回転角度を更新
     void draw(); // 球を描画
     void drawTrajectory();  //軌跡を描画
+private:
+    bool lightEmission_;    // 球が光を放つかどうか
 
 };
 #endif
